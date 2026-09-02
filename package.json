@@ -8,9 +8,16 @@
   "scripts": {
     "test": "node --test \"test/*.test.js\"",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "docs": "node scripts/gen-docs.js"
   },
-  "keywords": [],
+  "keywords": [
+    "base",
+    "ethereum",
+    "cli",
+    "ethers",
+    "smart-contracts"
+  ],
   "author": "Sebastian (knollexp)",
   "license": "MIT",
   "type": "commonjs",
@@ -25,5 +32,18 @@
   },
   "engines": {
     "node": ">=20.12"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/knollexp/basebook.git"
+  },
+  "bugs": {
+    "url": "https://github.com/knollexp/basebook/issues"
+  },
+  "homepage": "https://github.com/knollexp/basebook#readme",
+  "files": [
+    "bin",
+    "src",
+    "abi"
+  ]
 }
