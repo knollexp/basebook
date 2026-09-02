@@ -66,18 +66,42 @@ function createContract(network, name, runner) {
   return { ...resolved, contract };
 }
 
+const RATE_LIMIT_HINT =
+  "The endpoint returned no data. The public Base RPC rate-limits bursts, so " +
+  "this is usually throttling rather than the contract. Retry, or pass --rpc " +
+  "with your own endpoint.";
+
+/** Detects a throttling response, which arrives in several shapes. */
+function looksRateLimited(err) {
+  const code = err.info?.error?.code;
+  if (code === -32016 || code === 429) return true;
+  const text = `${err.info?.error?.message || ""} ${err.shortMessage || ""}`.toLowerCase();
+  return text.includes("rate limit") || text.includes("too many requests");
+}
+
 /**
  * Turns a failed contract call into something a user can act on.
  *
  * ethers wraps a revert in a CALL_EXCEPTION whose message buries the reason
  * under stack noise, and reports a missing network as a generic error.
+ *
+ * A throttled request also surfaces as CALL_EXCEPTION, with no revert data
+ * at all. Reporting that as a revert sends the reader looking at the contract
+ * for a fault that is in the transport, so the two are separated here.
  */
 function explainError(err) {
-  if (err.code === "CALL_EXCEPTION" && err.reason) return `Reverted: ${err.reason}`;
-  if (err.code === "CALL_EXCEPTION") return "Reverted without a reason string";
+  if (looksRateLimited(err)) return RATE_LIMIT_HINT;
+
+  if (err.code === "CALL_EXCEPTION") {
+    if (err.reason) return `Reverted: ${err.reason}`;
+    if (!err.data || err.data === "0x") return RATE_LIMIT_HINT;
+    return "Reverted without a reason string";
+  }
+
   if (err.code === "INSUFFICIENT_FUNDS") return "Not enough ETH to pay for this transaction";
-  if (err.code === "NETWORK_ERROR")
+  if (err.code === "NETWORK_ERROR" || err.code === "TIMEOUT" || err.code === "SERVER_ERROR") {
     return `Cannot reach the RPC endpoint: ${err.shortMessage || err.message}`;
+  }
   if (err.code === "INVALID_ARGUMENT" && err.argument) {
     return `Invalid value for ${err.argument}: ${JSON.stringify(err.value)}`;
   }

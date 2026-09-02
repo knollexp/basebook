@@ -105,8 +105,35 @@ describe("explainError", () => {
     assert.equal(message, "Reverted: Counter: underflow");
   });
 
-  test("reports a revert with no reason string", () => {
-    assert.match(explainError({ code: "CALL_EXCEPTION" }), /without a reason/);
+  test("reports a revert that carries data but no reason string", () => {
+    assert.match(explainError({ code: "CALL_EXCEPTION", data: "0x1234" }), /without a reason/);
+  });
+
+  test("does not call a dataless failure a revert", () => {
+    // A throttled request arrives as CALL_EXCEPTION with no revert data.
+    // Calling that a revert points the reader at the contract instead of the
+    // transport, which is what happened while testing against the public
+    // endpoint.
+    const message = explainError({ code: "CALL_EXCEPTION", data: "0x" });
+    assert.doesNotMatch(message, /Reverted/);
+    assert.match(message, /rate-limits/);
+  });
+
+  test("treats a missing data field the same way", () => {
+    assert.match(explainError({ code: "CALL_EXCEPTION" }), /rate-limits/);
+  });
+
+  test("recognises an explicit rate limit code", () => {
+    assert.match(explainError({ info: { error: { code: -32016 } } }), /rate-limits/);
+  });
+
+  test("recognises a rate limit named in the message", () => {
+    const err = { info: { error: { message: "Your app has exceeded its rate limit" } } };
+    assert.match(explainError(err), /rate-limits/);
+  });
+
+  test("reports a server error as an endpoint problem", () => {
+    assert.match(explainError({ code: "SERVER_ERROR", shortMessage: "502" }), /Cannot reach/);
   });
 
   test("translates insufficient funds", () => {
