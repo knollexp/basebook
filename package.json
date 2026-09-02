@@ -1,0 +1,29 @@
+{
+  "name": "basebook",
+  "version": "0.1.0",
+  "description": "A CLI for the eleven base-contracts deployed on Base",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [],
+  "author": "Sebastian (knollexp)",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "ethers": "^6.17.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
+  },
+  "bin": {
+    "basebook": "bin/basebook.js"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}
